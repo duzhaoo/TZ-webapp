@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>极简体重</title>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Hammer.js 手势支持 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- 移除了PWA支持 -->
+</head>
+<body class="bg-gray-100 text-gray-900 h-screen">
+    <div x-data="weightApp" class="h-full flex flex-col">
+        <!-- 顶部导航栏 -->
+        <header class="bg-white p-4 flex justify-between items-center shadow-sm">
+            <div class="text-blue-500 font-bold">VIP</div>
+            <h1 class="text-xl font-bold">极简体重</h1>
+            <button @click="openSettings" class="text-blue-500">
+                <i class="ri-settings-3-line text-xl"></i>
+            </button>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="flex-1 overflow-auto p-4">
+            <!-- 累计减重信息 -->
+            <div class="bg-white rounded-lg p-4 mb-4 flex justify-between items-center">
+                <div class="text-gray-600">累计减重</div>
+                <div class="flex items-center">
+                    <span class="text-green-500 text-2xl font-bold" x-text="totalWeightLoss + ' kg'"></span>
+                    <i class="ri-arrow-down-line text-green-500 ml-1"></i>
+                </div>
+            </div>
+
+            <!-- 体重趋势图 -->
+            <div class="bg-white rounded-lg p-4 mb-4">
+                <canvas id="weightChart" height="180"></canvas>
+            </div>
+
+            <!-- 体重记录列表 -->
+            <div class="space-y-2">
+                <template x-for="(record, index) in weightRecords" :key="index">
+                    <div class="bg-white rounded-lg p-4 flex justify-between items-center" @click="editRecord(record)">
+                        <div class="text-gray-800" x-text="formatDate(record.date)"></div>
+                        <div class="text-blue-500 text-xl font-bold" x-text="record.weight + ' kg'"></div>
+                    </div>
+                </template>
+            </div>
+        </main>
+
+        <!-- 底部添加按钮 -->
+        <div class="fixed bottom-8 inset-x-0 flex justify-center">
+            <button @click="openAddModal" class="bg-blue-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
+                <i class="ri-add-line text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- 添加记录模态框 -->
+        <div x-show="showAddModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-end justify-center z-50" @click.self="closeAddModal">
+            <div class="bg-white rounded-t-xl w-full p-6 animate-slide-up">
+                <div class="text-center mb-6">
+                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="currentWeight + ' kg'"></div>
+                    <div class="flex justify-center items-center">
+                        <button @click="decreaseWeight" class="bg-red-200 text-red-500 w-12 h-12 rounded-lg flex items-center justify-center">
+                            <i class="ri-subtract-line text-xl"></i>
+                        </button>
+                        <div class="mx-4 w-48">
+                            <input type="range" x-model="currentWeight" min="30" max="200" step="0.1" class="w-full">
+                        </div>
+                        <button @click="increaseWeight" class="bg-green-200 text-green-500 w-12 h-12 rounded-lg flex items-center justify-center">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between mb-6">
+                    <button @click="setDateToday" :class="{'bg-blue-500 text-white': isToday, 'bg-gray-200 text-gray-800': !isToday}" class="px-4 py-2 rounded-lg">今天</button>
+                    <button @click="setDateYesterday" :class="{'bg-blue-500 text-white': isYesterday, 'bg-gray-200 text-gray-800': !isYesterday}" class="px-4 py-2 rounded-lg">昨天</button>
+                    <button @click="setDateDayBeforeYesterday" :class="{'bg-blue-500 text-white': isDayBeforeYesterday, 'bg-gray-200 text-gray-800': !isDayBeforeYesterday}" class="px-4 py-2 rounded-lg">前天</button>
+                    <button @click="openDatePicker" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">其他</button>
+                </div>
+                <button @click="saveRecord" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold">保存</button>
+            </div>
+        </div>
+
+        <!-- 编辑记录模态框 -->
+        <div x-show="showEditModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-end justify-center z-50" @click.self="closeEditModal">
+            <div class="bg-white rounded-t-xl w-full p-6 animate-slide-up">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">编辑记录</h2>
+                    <button @click="closeEditModal" class="text-gray-500">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="text-center mb-6">
+                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="editingWeight + ' kg'"></div>
+                    <div class="flex justify-center items-center">
+                        <button @click="decreaseEditingWeight" class="bg-red-200 text-red-500 w-12 h-12 rounded-lg flex items-center justify-center">
+                            <i class="ri-subtract-line text-xl"></i>
+                        </button>
+                        <div class="mx-4 w-48">
+                            <input type="range" x-model="editingWeight" min="30" max="200" step="0.1" class="w-full">
+                        </div>
+                        <button @click="increaseEditingWeight" class="bg-green-200 text-green-500 w-12 h-12 rounded-lg flex items-center justify-center">
+                            <i class="ri-add-line text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between mb-6">
+                    <button @click="setEditDateToday" :class="{'bg-blue-500 text-white': isEditToday, 'bg-gray-200 text-gray-800': !isEditToday}" class="px-4 py-2 rounded-lg">今天</button>
+                    <button @click="setEditDateYesterday" :class="{'bg-blue-500 text-white': isEditYesterday, 'bg-gray-200 text-gray-800': !isEditYesterday}" class="px-4 py-2 rounded-lg">昨天</button>
+                    <button @click="setEditDateOriginal" :class="{'bg-blue-500 text-white': isEditOriginal, 'bg-gray-200 text-gray-800': !isEditOriginal}" class="px-4 py-2 rounded-lg">原始</button>
+                    <button @click="openEditDatePicker" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">其他</button>
+                </div>
+                <div class="flex space-x-4">
+                    <button @click="deleteRecord" class="w-1/2 bg-red-500 text-white py-3 rounded-lg font-bold">删除</button>
+                    <button @click="updateRecord" class="w-1/2 bg-blue-500 text-white py-3 rounded-lg font-bold">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置模态框 -->
+        <div x-show="showSettingsModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50" @click.self="closeSettings">
+            <div class="bg-white rounded-xl w-11/12 p-6 animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">设置</h2>
+                    <button @click="closeSettings" class="text-gray-500">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span>单位</span>
+                        <select x-model="settings.unit" class="bg-gray-100 p-2 rounded">
+                            <option value="kg">公斤 (kg)</option>
+                            <option value="lb">磅 (lb)</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>图表显示天数</span>
+                        <select x-model="settings.chartDays" class="bg-gray-100 p-2 rounded">
+                            <option value="7">7天</option>
+                            <option value="14">14天</option>
+                            <option value="30">30天</option>
+                            <option value="90">90天</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>主题</span>
+                        <select x-model="settings.theme" class="bg-gray-100 p-2 rounded">
+                            <option value="light">浅色</option>
+                            <option value="dark">深色</option>
+                            <option value="system">跟随系统</option>
+                        </select>
+                    </div>
+                </div>
+                <button @click="saveSettings" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold mt-6">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
