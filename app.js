@@ -301,6 +301,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         saveRecord() {
+            // 先关闭模态框，确保界面响应
+            this.showAddModal = false;
+            
             // 创建新记录
             const newRecord = {
                 weight: parseFloat(this.currentWeight).toFixed(1),
@@ -329,9 +332,6 @@ document.addEventListener('alpine:init', () => {
             // 更新图表和减重计算
             this.updateChart();
             this.calculateWeightLoss();
-            
-            // 关闭模态框
-            this.closeAddModal();
             
             // 添加动画效果，突出显示新记录
             setTimeout(() => {
@@ -443,6 +443,9 @@ document.addEventListener('alpine:init', () => {
         updateRecord() {
             if (this.editingRecordIndex === null) return;
             
+            // 先关闭模态框，确保界面响应
+            this.showEditModal = false;
+            
             // 先删除原记录
             this.weightRecords.splice(this.editingRecordIndex, 1);
             
@@ -472,12 +475,23 @@ document.addEventListener('alpine:init', () => {
             this.updateChart();
             this.calculateWeightLoss();
             
-            // 关闭模态框
-            this.closeEditModal();
+            // 添加动画效果，突出显示更新的记录
+            setTimeout(() => {
+                const updatedRecord = document.querySelector('.weight-record');
+                if (updatedRecord) {
+                    updatedRecord.classList.add('highlight-record');
+                    setTimeout(() => {
+                        updatedRecord.classList.remove('highlight-record');
+                    }, 1500);
+                }
+            }, 100);
         },
 
         deleteRecord() {
             if (this.editingRecordIndex === null) return;
+            
+            // 先关闭模态框，确保界面响应
+            this.showEditModal = false;
             
             // 删除记录
             this.weightRecords.splice(this.editingRecordIndex, 1);
@@ -488,9 +502,6 @@ document.addEventListener('alpine:init', () => {
             // 更新图表和减重计算
             this.updateChart();
             this.calculateWeightLoss();
-            
-            // 关闭模态框
-            this.closeEditModal();
         },
 
         openSettings() {
