@@ -80,6 +80,22 @@ button:active {
     border-top-right-radius: 20px;
 }
 
+/* 记录高亮动画 */
+@keyframes highlight {
+    0% {
+        background-color: rgba(0, 128, 255, 0.2);
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: white;
+        transform: scale(1);
+    }
+}
+
+.highlight-record {
+    animation: highlight 1.5s ease-out;
+}
+
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
     width: 6px;

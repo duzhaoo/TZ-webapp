@@ -20,8 +20,7 @@ document.addEventListener('alpine:init', () => {
         weightChart: null,
         settings: {
             unit: 'kg',
-            chartDays: '14',
-            theme: 'light'
+            chartDays: '14'
         },
 
         init() {
@@ -55,25 +54,36 @@ document.addEventListener('alpine:init', () => {
             if (savedSettings) {
                 this.settings = JSON.parse(savedSettings);
             }
-            this.applyTheme();
         },
 
         saveSettings() {
             localStorage.setItem('weightSettings', JSON.stringify(this.settings));
-            this.applyTheme();
             this.updateChart();
+            this.updateDisplayedWeights();
             this.closeSettings();
         },
 
-        applyTheme() {
-            const isDark = this.settings.theme === 'dark' || 
-                          (this.settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            
-            if (isDark) {
-                document.documentElement.classList.add('dark');
+        // 更新显示的体重值，根据单位设置转换
+        updateDisplayedWeights() {
+            // 重新渲染所有体重记录，以应用新的单位设置
+            this.$nextTick(() => {
+                this.calculateWeightLoss();
+            });
+        },
+        
+        // 转换重量单位 (kg <-> jin)
+        convertWeight(weight, toUnit) {
+            const numWeight = parseFloat(weight);
+            if (toUnit === 'jin') {
+                return (numWeight * 2).toFixed(1); // 1kg = 2斤
             } else {
-                document.documentElement.classList.remove('dark');
+                return numWeight.toFixed(1); // 默认返回kg值
             }
+        },
+        
+        // 获取显示的体重值（根据当前单位设置）
+        getDisplayWeight(weight) {
+            return this.convertWeight(weight, this.settings.unit);
         },
 
         saveRecords() {
@@ -109,8 +119,8 @@ document.addEventListener('alpine:init', () => {
                 data: {
                     labels: chartData.labels,
                     datasets: [{
-                        label: '体重 (kg)',
-                        data: chartData.data,
+                        label: this.settings.unit === 'kg' ? '体重 (kg)' : '体重 (斤)',
+                        data: this.settings.unit === 'kg' ? chartData.data : chartData.data.map(w => parseFloat(w) * 2),
                         borderColor: '#0080ff',
                         backgroundColor: 'rgba(0, 128, 255, 0.1)',
                         borderWidth: 2,
@@ -131,8 +141,9 @@ document.addEventListener('alpine:init', () => {
                             mode: 'index',
                             intersect: false,
                             callbacks: {
-                                label: function(context) {
-                                    return `${context.parsed.y} kg`;
+                                label: (context) => {
+                                    const unit = this.settings.unit === 'kg' ? 'kg' : '斤';
+                                    return `${context.parsed.y} ${unit}`;
                                 }
                             }
                         }
@@ -320,6 +331,17 @@ document.addEventListener('alpine:init', () => {
             
             // 关闭模态框
             this.closeAddModal();
+            
+            // 添加动画效果，突出显示新记录
+            setTimeout(() => {
+                const firstRecord = document.querySelector('.weight-record');
+                if (firstRecord) {
+                    firstRecord.classList.add('highlight-record');
+                    setTimeout(() => {
+                        firstRecord.classList.remove('highlight-record');
+                    }, 1500);
+                }
+            }, 100);
         },
 
         sortRecordsByDate() {

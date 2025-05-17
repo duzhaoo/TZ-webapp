@@ -35,7 +35,7 @@
             <div class="bg-white rounded-lg p-4 mb-4 flex justify-between items-center">
                 <div class="text-gray-600">累计减重</div>
                 <div class="flex items-center">
-                    <span class="text-green-500 text-2xl font-bold" x-text="totalWeightLoss + ' kg'"></span>
+                    <span class="text-green-500 text-2xl font-bold" x-text="getDisplayWeight(totalWeightLoss) + (settings.unit === 'kg' ? ' kg' : ' 斤')"></span>
                     <i class="ri-arrow-down-line text-green-500 ml-1"></i>
                 </div>
             </div>
@@ -48,9 +48,9 @@
             <!-- 体重记录列表 -->
             <div class="space-y-2">
                 <template x-for="(record, index) in weightRecords" :key="index">
-                    <div class="bg-white rounded-lg p-4 flex justify-between items-center" @click="editRecord(record)">
+                    <div class="bg-white rounded-lg p-4 flex justify-between items-center weight-record" @click="editRecord(record)">
                         <div class="text-gray-800" x-text="formatDate(record.date)"></div>
-                        <div class="text-blue-500 text-xl font-bold" x-text="record.weight + ' kg'"></div>
+                        <div class="text-blue-500 text-xl font-bold" x-text="getDisplayWeight(record.weight) + (settings.unit === 'kg' ? ' kg' : ' 斤')"></div>
                     </div>
                 </template>
             </div>
@@ -67,7 +67,7 @@
         <div x-show="showAddModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-end justify-center z-50" @click.self="closeAddModal">
             <div class="bg-white rounded-t-xl w-full p-6 animate-slide-up">
                 <div class="text-center mb-6">
-                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="currentWeight + ' kg'"></div>
+                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="getDisplayWeight(currentWeight) + (settings.unit === 'kg' ? ' kg' : ' 斤')"></div>
                     <div class="flex justify-center items-center">
                         <button @click="decreaseWeight" class="bg-red-200 text-red-500 w-12 h-12 rounded-lg flex items-center justify-center">
                             <i class="ri-subtract-line text-xl"></i>
@@ -100,7 +100,7 @@
                     </button>
                 </div>
                 <div class="text-center mb-6">
-                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="editingWeight + ' kg'"></div>
+                    <div class="text-blue-500 text-4xl font-bold mb-4" x-text="getDisplayWeight(editingWeight) + (settings.unit === 'kg' ? ' kg' : ' 斤')"></div>
                     <div class="flex justify-center items-center">
                         <button @click="decreaseEditingWeight" class="bg-red-200 text-red-500 w-12 h-12 rounded-lg flex items-center justify-center">
                             <i class="ri-subtract-line text-xl"></i>
@@ -140,7 +140,7 @@
                         <span>单位</span>
                         <select x-model="settings.unit" class="bg-gray-100 p-2 rounded">
                             <option value="kg">公斤 (kg)</option>
-                            <option value="lb">磅 (lb)</option>
+                            <option value="jin">斤 (jin)</option>
                         </select>
                     </div>
                     <div class="flex justify-between items-center">
@@ -150,14 +150,6 @@
                             <option value="14">14天</option>
                             <option value="30">30天</option>
                             <option value="90">90天</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span>主题</span>
-                        <select x-model="settings.theme" class="bg-gray-100 p-2 rounded">
-                            <option value="light">浅色</option>
-                            <option value="dark">深色</option>
-                            <option value="system">跟随系统</option>
                         </select>
                     </div>
                 </div>
