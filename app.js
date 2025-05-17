@@ -18,6 +18,7 @@ document.addEventListener('alpine:init', () => {
         isEditOriginal: true,
         totalWeightLoss: 0,
         weightChart: null,
+        updateButtonText: '检查更新',
         settings: {
             unit: 'kg',
             chartDays: '14'
@@ -498,6 +499,24 @@ document.addEventListener('alpine:init', () => {
 
         closeSettings() {
             this.showSettingsModal = false;
+        },
+        
+        // 检查更新功能
+        checkForUpdates() {
+            // 更新按钮文本显示加载中状态
+            this.updateButtonText = '正在检查更新...';
+            
+            // 添加一个延时，模拟检查过程
+            setTimeout(() => {
+                // 显示更新中状态
+                this.updateButtonText = '正在更新应用...';
+                
+                // 再添加一个延时，然后强制刷新页面
+                setTimeout(() => {
+                    // 强制刷新页面，清除缓存
+                    window.location.reload(true);
+                }, 800);
+            }, 1000);
         }
     }));
 });
